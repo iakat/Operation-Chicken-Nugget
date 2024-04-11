@@ -6,17 +6,23 @@ from random import randint
 
 import ovh
 import requests
-
-with open("config.json") as f:
-    config = json.load(f)
-
+from os import getenv, environ
+CONFIG = {
+    "endpoint": getenv("OCN_ENDPOINT"),
+    "ovhSubsidiary": getenv("OCN_OVH_SUBSIDIARY"),
+    "application_key": getenv("OCN_APPLICATION_KEY"),
+    "application_secret": getenv("OCN_APPLICATION_SECRET"),
+    "dedicated_datacenter": getenv("OCN_DEDICATED_DATACENTER"),
+    "region": getenv("OCN_REGION"),
+    "consumer_key": getenv("OCN_CONSUMER_KEY"),
+]
 # Instantiate. Visit https://api.ovh.com/createToken/?GET=/me
 # to get your credentials
 client = ovh.Client(
-    endpoint=config["endpoint"],
-    application_key=config["application_key"],
-    application_secret=config["application_secret"],
-    consumer_key=config["consumer_key"],
+    endpoint=CONFIG["endpoint"],
+    application_key=CONFIG["application_key"],
+    application_secret=CONFIG["application_secret"],
+    consumer_key=CONFIG["consumer_key"],
 )
 
 # Print nice welcome message
@@ -24,15 +30,15 @@ print("Welcome", client.get("/me")["firstname"])
 
 headers = {
     "Accept": "application/json",
-    "X-Ovh-Application": config["application_key"],
-    "X-Ovh-Consumer": config["consumer_key"],
+    "X-Ovh-Application": CONFIG["application_key"],
+    "X-Ovh-Consumer": CONFIG["consumer_key"],
     "Content-Type": "application/json;charset=utf-8",
-    "Host": config["endpointAPI"],
+    "Host": CONFIG["endpointAPI"],
 }
 print("Preparing Package")
 # getting current time
 response = requests.get(
-    f"https://{config['endpointAPI']}/1.0/auth/time", headers=headers
+    f"https://{CONFIG['endpointAPI']}/1.0/auth/time", headers=headers
 )
 if response.status_code == 200:
     print("Getting Time")
@@ -46,7 +52,7 @@ for day in range(4):
     print(f"Day {day}")
     # creating a new cart
     cart = client.post(
-        "/order/cart", ovhSubsidiary=config["ovhSubsidiary"], _need_auth=False
+        "/order/cart", ovhSubsidiary=CONFIG["ovhSubsidiary"], _need_auth=False
     )
     # assign new cart to current user
     client.post("/order/cart/{0}/assign".format(cart.get("cartId")))
@@ -60,7 +66,7 @@ for day in range(4):
         "quantity": 1,
     }
     response = requests.post(
-        f"https://{config['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/eco",
+        f"https://{CONFIG['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/eco",
         headers=headers,
         data=json.dumps(payload),
     )
@@ -70,7 +76,7 @@ for day in range(4):
         exit()
     # getting current cart
     response = requests.get(
-        f"https://{config['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}"
+        f"https://{CONFIG['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}"
     )
     if response.status_code != 200:
         print(response.status_code)
@@ -81,13 +87,13 @@ for day in range(4):
     print(f'Getting current cart {cart.get("cartId")}')
     # set configurations
     configurations = [
-        {"label": "region", "value": config["region"]},
-        {"label": "dedicated_datacenter", "value": config["dedicated_datacenter"]},
+        {"label": "region", "value": CONFIG["region"]},
+        {"label": "dedicated_datacenter", "value": CONFIG["dedicated_datacenter"]},
         {"label": "dedicated_os", "value": "none_64.en"},
     ]
     for entry in configurations:
         response = requests.post(
-            f"https://{config['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/item/{itemID}/configuration",
+            f"https://{CONFIG['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/item/{itemID}/configuration",
             headers=headers,
             data=json.dumps(entry),
         )
@@ -123,7 +129,7 @@ for day in range(4):
     ]
     for option in options:
         response = requests.post(
-            f"https://{config['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/eco/options",
+            f"https://{CONFIG['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/eco/options",
             headers=headers,
             data=json.dumps(option),
         )
@@ -167,14 +173,14 @@ for day in range(4):
                 "waiveRetractationPeriod": False,
             }
             # prepare sig
-            target = f"https://{config['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/checkout"
+            target = f"https://{CONFIG['endpointAPI']}/1.0/order/cart/{cart.get('cartId')}/checkout"
             now = str(int(time.time()) + timeDelta)
             signature = hashlib.sha1()
             signature.update(
                 "+".join(
                     [
-                        config["application_secret"],
-                        config["consumer_key"],
+                        CONFIG["application_secret"],
+                        CONFIG["consumer_key"],
                         "POST",
                         target,
                         json.dumps(payload),
