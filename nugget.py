@@ -2,20 +2,22 @@ import hashlib
 import json
 import time
 from datetime import datetime
+from os import environ, getenv
 from random import randint
 
 import ovh
 import requests
-from os import getenv, environ
+
 CONFIG = {
     "endpoint": getenv("OCN_ENDPOINT"),
+    "endpointAPI": getenv("OCN_ENDPOINT_API"),
     "ovhSubsidiary": getenv("OCN_OVH_SUBSIDIARY"),
     "application_key": getenv("OCN_APPLICATION_KEY"),
     "application_secret": getenv("OCN_APPLICATION_SECRET"),
     "dedicated_datacenter": getenv("OCN_DEDICATED_DATACENTER"),
     "region": getenv("OCN_REGION"),
     "consumer_key": getenv("OCN_CONSUMER_KEY"),
-]
+}
 # Instantiate. Visit https://api.ovh.com/createToken/?GET=/me
 # to get your credentials
 client = ovh.Client(
